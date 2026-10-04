@@ -32,3 +32,4 @@
 -   [x] Deduplication improvement (content hashes ignore whitespace-only variations; normalization migration applied)
 -   [x] Validation (import payloads and Gemini facts/rewrites are structurally checked)
 -   [ ] Production deployment (approval and publishing verified; stable webhook host, scheduler, and queue worker remain)
+-   [ ] WordPress SEO metadata (implementation added for Yoast focus keyphrase, tags, category, author, and featured image; VPS migration, bridge installation, and live verification pending)

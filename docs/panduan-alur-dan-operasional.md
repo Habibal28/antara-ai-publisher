@@ -31,7 +31,7 @@ Sesi ANTARA dapat kedaluwarsa. Import otomatis menjalankan langkah login terlebi
 | ----------------------- | ---------------------------------------- | --------------------------------------------------------------------- | -------------------------- |
 | Import                  | `php artisan antara:import [YYYY-MM-DD]` | Mengambil daftar dan detail berita ANTARA lalu menyimpan artikel baru | `pending`                  |
 | Ekstrak fakta           | `php artisan ai:extract-facts [ID]`      | Menghasilkan data fakta dari satu artikel                             | `processing`               |
-| Tulis ulang             | `php artisan ai:rewrite [ID]`            | Membuat judul dan isi draft berdasarkan fakta serta aturan gaya       | `drafted`                  |
+| Tulis ulang             | `php artisan ai:rewrite [ID]`            | Membuat judul, isi, focus keyword, tags, dan kategori berdasarkan fakta serta aturan gaya | `drafted`                  |
 | Kirim untuk persetujuan | `php artisan telegram:send-draft [ID]`   | Mengirim draft dengan tombol Approve dan Reject                       | `waiting_approval`         |
 | Persetujuan             | Klik tombol pada Telegram                | Webhook menerima callback dan mencatat keputusan                      | `approved` atau `rejected` |
 | Terbitkan               | `php artisan wordpress:publish [ID]`     | Menerbitkan artikel yang sudah approved dan menyimpan ID post         | `published`                |
@@ -57,7 +57,7 @@ Setelah draft dikirim, buka Telegram dan tekan **Approve**. Tunggu webhook menca
 php artisan wordpress:publish ID
 ```
 
-Publish membuat tulisan terlihat di WordPress. Jalankan hanya setelah memeriksa draft dan memastikan persetujuan sudah tercatat.
+Publish membuat tulisan terlihat di WordPress. Alur juga mengunggah gambar sumber sebagai featured image, memasang author yang dikonfigurasi, dan mengirim Yoast focus keyphrase. Pasang dan aktifkan `wordpress/antara-yoast-rest-bridge.zip` dari Dashboard WordPress sebelum menggunakan fitur ini. Jalankan hanya setelah memeriksa draft dan memastikan persetujuan sudah tercatat.
 
 Perintah tahap dapat dijalankan langsung; tidak perlu menjalankan scheduler atau queue worker untuk satu pemanggilan Artisan manual. `schedule:run` memeriksa jadwal dan memasukkan pekerjaan terjadwal ke antrean, jadi bukan pengganti perintah tahap ketika ingin memproses ID tertentu.
 

@@ -69,7 +69,10 @@ try {
             const content = paragraphs.length
                 ? paragraphs.join("\n\n")
                 : contentElement?.innerText.trim() ?? "";
-            const imageSrc = document.querySelector(".boxcontentfoto > a > img")?.getAttribute("src");
+            const imageLink = document.querySelector(".iconfto a[href]");
+            const imageUrl = imageLink
+                ? new URL(imageLink.getAttribute("href"), currentUrl.href).href
+                : null;
 
             return {
                 source_id: currentUrl.searchParams.get("id") ?? "",
@@ -77,7 +80,7 @@ try {
                 source_title: title,
                 source_published_at: dateText,
                 source_content: content,
-                image_url: imageSrc ? new URL(imageSrc, currentUrl.href).href : null,
+                image_url: imageUrl,
             };
         });
 

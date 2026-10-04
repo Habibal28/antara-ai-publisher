@@ -9,6 +9,7 @@
 - [x] Telegram approval end-to-end (Approve callback changed article #1 to `approved` on 2026-10-03)
 - [x] WordPress publishing implementation for approved articles
 - [x] WordPress end-to-end publishing verification (article #1 published as WordPress post 19313; readback returned status `publish`)
+- [ ] SEO metadata publishing (Yoast focus keyphrase, tags, category, fixed author, and featured image; implementation ready, VPS migration and live verification pending)
 - [x] Scheduler entries for fact extraction, rewrite, Telegram draft delivery, and approved-only WordPress publishing
 - [ ] Scheduler runtime and host cron setup
 - [x] Database queue job dispatch for scheduled workflow commands
@@ -55,6 +56,14 @@
 ## Next
 
 Productionize the webhook host and configure persistent scheduler and queue worker runtimes before relying on the full pipeline.
+
+## WordPress SEO metadata
+
+- Rewrite output now includes a focus keyword, tags, and category and persists them on the article record.
+- Telegram approval previews include the SEO metadata.
+- WordPress publishing resolves or creates taxonomy terms, assigns author `Habib Al Bay Haqqi`, uploads the source image as featured media, and publishes the post.
+- Install and activate `wordpress/antara-yoast-rest-bridge.zip` as a regular WordPress plugin so the REST API accepts and returns Yoast's `_yoast_wpseo_focuskw` field.
+- Run the new Laravel migration on the deployment and verify one complete article before marking this task done.
 
 ## Scheduler progress
 

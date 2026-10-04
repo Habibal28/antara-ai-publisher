@@ -18,7 +18,6 @@ class PublishWordPressArticle extends Command
         $articleId = $this->argument('article');
         $article = Article::query()
             ->where('status', 'approved')
-            ->whereNull('wordpress_post_id')
             ->when($articleId, fn ($query) => $query->whereKey($articleId))
             ->orderBy('id')
             ->first();

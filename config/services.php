@@ -51,6 +51,8 @@ return [
         'url' => env('WORDPRESS_URL'),
         'username' => env('WORDPRESS_USERNAME'),
         'application_password' => env('WORDPRESS_APPLICATION_PASSWORD'),
+        'author_name' => env('WORDPRESS_AUTHOR_NAME', 'Habib Al Bay Haqqi'),
+        'author_id' => env('WORDPRESS_AUTHOR_ID'),
     ],
 
 ];

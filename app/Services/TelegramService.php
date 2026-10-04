@@ -31,20 +31,32 @@ class TelegramService
             throw new RuntimeException('Draft artikel belum lengkap.');
         }
 
-        $text = $article->rewritten_title."\n\n".$article->rewritten_content;
+        $seoSummary = "\n\nSEO\nFocus keyword: ".($article->seo_focus_keyword ?: 'belum ada')
+            ."\nKategori: ".($article->seo_category ?: 'belum ada')
+            ."\nTags: ".(is_array($article->seo_tags) ? implode(', ', $article->seo_tags) : 'belum ada');
+        $articleText = $article->rewritten_title."\n\n".$article->rewritten_content;
+        $text = $articleText.$seoSummary;
         if (mb_strlen($text) > 3900) {
-            $text = mb_substr($text, 0, 3897).'...';
+            $maxArticleLength = 3900 - mb_strlen($seoSummary) - 3;
+            $text = mb_substr($articleText, 0, $maxArticleLength).'...'.$seoSummary;
+        }
+
+        $keyboard = [
+            'inline_keyboard' => [[
+                ['text' => 'Approve', 'callback_data' => 'approve:'.$article->id],
+                ['text' => 'Reject', 'callback_data' => 'reject:'.$article->id],
+            ]],
+        ];
+
+        if (filled($article->image_url)) {
+            $caption = mb_substr($article->rewritten_title."\n\n".$seoSummary, 0, 1024);
+            $this->sendPhoto($article->image_url, $caption);
         }
 
         $response = $this->request('sendMessage', [
             'chat_id' => $this->chatId(),
             'text' => $text,
-            'reply_markup' => [
-                'inline_keyboard' => [[
-                    ['text' => 'Approve', 'callback_data' => 'approve:'.$article->id],
-                    ['text' => 'Reject', 'callback_data' => 'reject:'.$article->id],
-                ]],
-            ],
+            'reply_markup' => $keyboard,
         ]);
 
         $messageId = data_get($response, 'result.message_id');
@@ -128,6 +140,41 @@ class TelegramService
             'callback_query_id' => $callbackId,
             'text' => $text,
         ]);
+    }
+
+    private function sendPhoto(string $url, string $caption): void
+    {
+        try {
+            $image = Http::timeout(45)->get($url);
+        } catch (ConnectionException) {
+            throw new RuntimeException('Tidak dapat mengunduh gambar sumber untuk Telegram.');
+        }
+
+        if (! $image->successful() || ! str_starts_with((string) $image->header('Content-Type'), 'image/')) {
+            throw new RuntimeException('Gambar sumber gagal diunduh atau responsnya bukan gambar.');
+        }
+
+        $token = config('services.telegram.bot_token');
+        if (! is_string($token) || trim($token) === '') {
+            throw new RuntimeException('TELEGRAM_BOT_TOKEN belum diatur di file .env.');
+        }
+
+        $path = parse_url($url, PHP_URL_PATH) ?: '';
+        $filename = basename($path) ?: 'antara-image.jpg';
+        try {
+            $response = Http::acceptJson()->timeout(45)
+                ->attach('photo', $image->body(), $filename)
+                ->post("https://api.telegram.org/bot{$token}/sendPhoto", [
+                    'chat_id' => $this->chatId(),
+                    'caption' => $caption,
+                ]);
+        } catch (ConnectionException) {
+            throw new RuntimeException('Tidak dapat terhubung ke Telegram API. Periksa koneksi server.');
+        }
+
+        if ($response->failed() || $response->json('ok') !== true) {
+            throw new RuntimeException('Telegram gagal mengunggah gambar: '.($response->json('description') ?? 'respons tidak valid.'));
+        }
     }
 
     private function request(string $method, array $payload): array

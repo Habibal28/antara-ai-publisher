@@ -49,6 +49,9 @@ class RewriteArticle extends Command
                 $article->update([
                     'rewritten_title' => $rewrite['title'],
                     'rewritten_content' => $rewrite['content'],
+                    'seo_focus_keyword' => $rewrite['focus_keyword'],
+                    'seo_tags' => $rewrite['tags'],
+                    'seo_category' => $rewrite['category'],
                     'ai_model' => $rewrite['model'],
                     'ai_processed_at' => now(),
                     'status' => 'drafted',

@@ -6,6 +6,8 @@ use App\Models\Article;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use Symfony\Component\Process\Process;
 use Throwable;
 
@@ -69,6 +71,13 @@ class ImportAntaraArticles extends Command
             }
         }
 
+        foreach ($articles as &$article) {
+            $article['image_path'] = $article['image_url']
+                ? $this->downloadImage($article['image_url'], (string) $article['source_id'])
+                : null;
+        }
+        unset($article);
+
         $inserted = 0;
         $skipped = 0;
 
@@ -100,8 +109,9 @@ class ImportAntaraArticles extends Command
                         $missingFields['source_published_at'] = $publishedAt;
                     }
 
-                    if ($existingArticle->image_url === null && ! empty($article['image_url'])) {
+                    if ($existingArticle->image_path === null && ! empty($article['image_path'])) {
                         $missingFields['image_url'] = $article['image_url'];
+                        $missingFields['image_path'] = $article['image_path'];
                     }
 
                     if ($missingFields !== []) {
@@ -123,6 +133,7 @@ class ImportAntaraArticles extends Command
                     'source_published_at' => $publishedAt,
                     'content_hash' => $contentHash,
                     'image_url' => $article['image_url'] ?? null,
+                    'image_path' => $article['image_path'] ?? null,
                 ]);
 
                 $inserted++;
@@ -219,5 +230,36 @@ class ImportAntaraArticles extends Command
     private function normalizeContent(string $content): string
     {
         return trim((string) preg_replace('/\s+/u', ' ', $content));
+    }
+
+    private function downloadImage(string $url, string $sourceId): ?string
+    {
+        $response = Http::timeout(45)->get($url);
+
+        if (! $response->successful() || ! str_starts_with((string) $response->header('Content-Type'), 'image/')) {
+            $this->warn("Gambar artikel sumber {$sourceId} tidak dapat diunduh; artikel tetap diimpor tanpa file gambar.");
+
+            return null;
+        }
+
+        $mime = strtolower(trim(explode(';', (string) $response->header('Content-Type'))[0]));
+        $extension = match ($mime) {
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+            'image/gif' => 'gif',
+            default => null,
+        };
+
+        if ($extension === null) {
+            $this->warn("Format gambar artikel sumber {$sourceId} tidak didukung.");
+
+            return null;
+        }
+
+        $path = "antara-images/{$sourceId}.{$extension}";
+        Storage::disk('local')->put($path, $response->body());
+
+        return $path;
     }
 }

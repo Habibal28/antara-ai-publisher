@@ -102,22 +102,19 @@ if (await imageLocator.count()) {
 // LINK DOWNLOAD FOTO
 // ===============================
 
-let imageDownloadUrl = "";
+let contentPhotoUrl = "";
 let photoId = "";
 
-const downloadPhotoLocator = page
-    .locator('.boxcontentfoto a[href*="download_foto.php"]')
+const contentPhotoLocator = page
+    .locator('.boxcontentfoto a[href*="content_photo.php?idphoto="]')
     .first();
 
-if (await downloadPhotoLocator.count()) {
-    const href = await downloadPhotoLocator.getAttribute("href");
+if (await contentPhotoLocator.count()) {
+    const href = await contentPhotoLocator.getAttribute("href");
 
     if (href) {
-        imageDownloadUrl = new URL(href, page.url()).href;
-
-        const parsedPhotoUrl = new URL(imageDownloadUrl);
-
-        photoId = parsedPhotoUrl.searchParams.get("idphoto") || "";
+        contentPhotoUrl = new URL(href, page.url()).href;
+        photoId = new URL(contentPhotoUrl).searchParams.get("idphoto") || "";
     }
 }
 
@@ -131,8 +128,8 @@ const result = {
     date: dateText,
     content,
     photoId,
+    contentPhotoUrl,
     imageUrl,
-    imageDownloadUrl,
 };
 
 // ===============================
@@ -153,7 +150,7 @@ console.log("Jumlah paragraf:", paragraphCount);
 
 console.log("Foto preview ditemukan:", imageUrl ? "YA" : "TIDAK");
 
-console.log("Link download foto ditemukan:", imageDownloadUrl ? "YA" : "TIDAK");
+console.log("Halaman foto ditemukan:", contentPhotoUrl ? "YA" : "TIDAK");
 
 // ===============================
 // CLOSE
