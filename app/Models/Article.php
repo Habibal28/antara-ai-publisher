@@ -20,6 +20,7 @@ class Article extends Model
         'facts',
         'rewritten_title',
         'rewritten_content',
+        'seo_meta_description',
         'seo_focus_keyword',
         'seo_tags',
         'seo_category',

@@ -49,6 +49,7 @@ class RewriteArticle extends Command
                 $article->update([
                     'rewritten_title' => $rewrite['title'],
                     'rewritten_content' => $rewrite['content'],
+                    'seo_meta_description' => $rewrite['meta_description'],
                     'seo_focus_keyword' => $rewrite['focus_keyword'],
                     'seo_tags' => $rewrite['tags'],
                     'seo_category' => $rewrite['category'],

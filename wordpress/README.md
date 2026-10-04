@@ -4,11 +4,11 @@ Panduan ini memasang dukungan agar ANTARA AI Publisher dapat mengirim artikel le
 
 ## 1. Cara kerjanya
 
-Saat artikel ditulis ulang, Gemini menghasilkan judul, isi, focus keyword, tags, dan kategori. Laravel menyimpan hasilnya di database agar tetap tersedia ketika artikel menunggu persetujuan atau publikasi dicoba ulang.
+Saat artikel ditulis ulang, Gemini menghasilkan judul, isi, meta description, focus keyword, tags, dan kategori. Laravel menyimpan hasilnya di database agar tetap tersedia ketika artikel menunggu persetujuan atau publikasi dicoba ulang.
 
 Setelah artikel disetujui, Laravel akan mencari atau membuat kategori dan tags, mencari penulis **Habib Al Bay Haqqi**, mengunggah gambar sumber ke Media Library, lalu membuat post sebagai draft. Laravel memeriksa bahwa focus keyphrase tersimpan di Yoast sebelum mengubah status post menjadi `publish`.
 
-Yoast menyediakan REST API untuk membaca metadata SEO, tetapi API tersebut tidak menerima perubahan metadata melalui POST atau PUT. Karena itu, bridge mendaftarkan field focus keyphrase Yoast agar dapat ditulis melalui WordPress REST API. Bridge juga mendaftarkan meta `writer-value` untuk mengisi field **Penulis Berita** pada metabox situs. [Dokumentasi REST API Yoast](https://developer.yoast.com/customization/apis/rest-api/) dan [panduan metadata REST WordPress](https://developer.wordpress.org/rest-api/extending-the-rest-api/modifying-responses/) menjelaskan mekanisme metadata REST.
+Yoast menyediakan REST API untuk membaca metadata SEO, tetapi API tersebut tidak menerima perubahan metadata melalui POST atau PUT. Karena itu, bridge mendaftarkan field focus keyphrase dan meta description Yoast agar dapat ditulis melalui WordPress REST API. Bridge juga mendaftarkan meta `writer-value` untuk mengisi field **Penulis Berita** pada metabox situs. [Dokumentasi REST API Yoast](https://developer.yoast.com/customization/apis/rest-api/) dan [panduan metadata REST WordPress](https://developer.wordpress.org/rest-api/extending-the-rest-api/modifying-responses/) menjelaskan mekanisme metadata REST.
 
 ## 2. Prasyarat
 
@@ -95,7 +95,7 @@ php artisan migrate --force
 php artisan migrate:status
 ```
 
-Migration menambahkan kolom metadata SEO dan ID kategori, tags, author, gambar, serta post WordPress pada tabel artikel. Jika queue worker berjalan sebagai proses tetap, minta worker memuat ulang kode:
+Migration menambahkan kolom metadata SEO termasuk meta description, serta ID kategori, tags, author, gambar, dan post WordPress pada tabel artikel. Jika queue worker berjalan sebagai proses tetap, minta worker memuat ulang kode:
 
 ```bash
 php artisan queue:restart
@@ -138,11 +138,11 @@ Setelah Laravel melaporkan publikasi berhasil:
 
 Laravel menyimpan ID post, media, author, kategori, dan tags di database artikel. Jika perintah gagal, periksa `error_message` pada record dan `storage/logs/laravel.log`. Hapus rahasia dari log sebelum membagikannya.
 
-Untuk mengisi field Penulis Berita pada post yang sudah ada, atur `WORDPRESS_AUTHOR_NAME`, perbarui plugin bridge dari ZIP terbaru, lalu jalankan `php artisan wordpress:sync-author ID_ARTIKEL`.
+Untuk mengisi meta description dan field Penulis Berita pada post yang sudah ada, perbarui plugin bridge dari ZIP terbaru, lalu jalankan `php artisan wordpress:sync-author ID_ARTIKEL`. Jika artikel lama belum memiliki meta description, perintah membuat ringkasan dari isi rewrite yang tersimpan.
 
 ## 10. Artikel lama
 
-Migration hanya menambah kolom kosong; artikel yang sudah direwrite sebelumnya tidak otomatis memperoleh metadata SEO. Untuk mengisi metadata artikel lama, rewrite harus dijalankan ulang:
+Artikel yang sudah direwrite sebelum kolom meta description tersedia tidak otomatis memperoleh deskripsi hasil Gemini. Perintah `wordpress:sync-author` membuat ringkasan dari isi rewrite untuk post lama. Jika ingin membuat ulang seluruh metadata SEO dengan Gemini, `ai:rewrite` dapat dijalankan ulang, tetapi perintah tersebut juga dapat mengganti judul dan isi artikel:
 
 ```bash
 php artisan ai:rewrite ID_ARTIKEL

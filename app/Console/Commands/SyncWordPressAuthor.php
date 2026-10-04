@@ -11,7 +11,7 @@ class SyncWordPressAuthor extends Command
 {
     protected $signature = 'wordpress:sync-author {article : ID artikel Laravel}';
 
-    protected $description = 'Isi field Penulis Berita pada post WordPress yang sudah terhubung';
+    protected $description = 'Sinkronkan meta description dan Penulis Berita pada post WordPress';
 
     public function handle(WordPressService $wordpress): int
     {
@@ -27,7 +27,7 @@ class SyncWordPressAuthor extends Command
             $wordpress->syncPostAuthor($article);
             $article->update(['error_message' => null]);
             $writerName = (string) config('services.wordpress.author_name');
-            $this->info("Penulis Berita '{$writerName}' berhasil disimpan pada post WordPress {$article->wordpress_post_id}.");
+            $this->info("Meta description dan Penulis Berita '{$writerName}' berhasil disimpan pada post WordPress {$article->wordpress_post_id}.");
 
             return self::SUCCESS;
         } catch (Throwable $exception) {

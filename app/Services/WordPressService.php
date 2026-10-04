@@ -23,13 +23,19 @@ class WordPressService
             throw new RuntimeException('Artikel harus memiliki wordpress_post_id dan WORDPRESS_AUTHOR_NAME harus diatur.');
         }
 
+        $metaDescription = $this->metaDescription($article);
+
         $response = $this->client()->post($baseUrl.'/wp-json/wp/v2/posts/'.$article->wordpress_post_id, [
-            'meta' => ['writer-value' => $writerName],
+            'meta' => [
+                'writer-value' => $writerName,
+                '_yoast_wpseo_metadesc' => $metaDescription,
+            ],
         ]);
 
         if (! $response->successful()
-            || (string) $response->json('meta.writer-value') !== $writerName) {
-            throw new RuntimeException('WordPress tidak menyimpan Penulis Berita. Pastikan bridge REST terbaru sudah aktif.');
+            || (string) $response->json('meta.writer-value') !== $writerName
+            || (string) $response->json('meta._yoast_wpseo_metadesc') !== $metaDescription) {
+            throw new RuntimeException('WordPress tidak menyimpan meta description atau Penulis Berita. Pastikan bridge REST terbaru sudah aktif.');
         }
     }
 
@@ -44,6 +50,8 @@ class WordPressService
         if (blank($article->seo_focus_keyword) || blank($article->seo_category) || empty($article->seo_tags)) {
             throw new RuntimeException('Metadata SEO belum lengkap. Jalankan ulang ai:rewrite untuk artikel ini.');
         }
+
+        $metaDescription = $this->metaDescription($article);
 
         $writerName = trim((string) config('services.wordpress.author_name'));
         if ($writerName === '') {
@@ -76,6 +84,7 @@ class WordPressService
             'featured_media' => $mediaId,
             'meta' => [
                 '_yoast_wpseo_focuskw' => $article->seo_focus_keyword,
+                '_yoast_wpseo_metadesc' => $metaDescription,
                 'writer-value' => $writerName,
             ],
         ];
@@ -95,6 +104,10 @@ class WordPressService
             throw new RuntimeException('Yoast tidak menyimpan focus keyphrase. Pasang plugin bridge WordPress yang disertakan, lalu coba publikasi lagi.');
         }
 
+        if ((string) $postResponse->json('meta._yoast_wpseo_metadesc') !== $metaDescription) {
+            throw new RuntimeException('Yoast tidak menyimpan meta description. Pastikan bridge REST terbaru sudah aktif.');
+        }
+
         if ((string) $postResponse->json('meta.writer-value') !== $writerName) {
             throw new RuntimeException('WordPress tidak menyimpan Penulis Berita. Pastikan bridge REST terbaru sudah aktif.');
         }
@@ -112,6 +125,33 @@ class WordPressService
         return Http::acceptJson()
             ->withBasicAuth((string) config('services.wordpress.username'), (string) config('services.wordpress.application_password'))
             ->timeout(45);
+    }
+
+    private function metaDescription(Article $article): string
+    {
+        $description = trim((string) $article->seo_meta_description);
+
+        if ($description === '') {
+            $content = html_entity_decode(strip_tags((string) $article->rewritten_content), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            $content = trim((string) preg_replace('/\s+/u', ' ', $content));
+
+            if ($content === '') {
+                throw new RuntimeException('Meta description kosong dan isi rewrite tidak tersedia untuk membuat ringkasan.');
+            }
+
+            if (mb_strlen($content) > 155) {
+                $excerpt = mb_substr($content, 0, 152);
+                $lastSpace = mb_strrpos($excerpt, ' ');
+                $description = rtrim(mb_substr($excerpt, 0, $lastSpace === false ? null : $lastSpace), ' ,.;:') . '…';
+            } else {
+                $description = $content;
+            }
+
+            $article->seo_meta_description = $description;
+            $article->save();
+        }
+
+        return $description;
     }
 
     private function findOrCreateTerm(string $baseUrl, string $endpoint, string $name): int
