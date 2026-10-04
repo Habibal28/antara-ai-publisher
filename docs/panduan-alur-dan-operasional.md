@@ -40,6 +40,8 @@ Untuk tahap AI, Telegram, dan WordPress, satu pemanggilan tanpa ID mengambil pal
 
 Status `failed` berarti tahap sebelumnya mengalami masalah. Lihat pesan error artikel dan log aplikasi sebelum mencoba ulang. Hindari membagikan log mentah tanpa memeriksa apakah ada informasi rahasia.
 
+Saat import, byline `Oleh ...` disimpan ke `articles.source_author`. URL gambar langsung dari ANTARA diunduh ke `storage/app/private/antara-images` (disk `local`) dan lokasi file disimpan pada kolom `articles.image_path`. Pengiriman Telegram dan unggahan featured image WordPress menggunakan file lokal ini. File gambar tidak masuk Git dan tidak ikut `push`/`pull`; setiap mesin harus mengimpornya sendiri, dan direktori `storage` harus persisten saat deployment.
+
 ## Menjalankan satu artikel secara manual
 
 Ganti tanggal dan ID dengan nilai yang sesuai. Untuk import hari ini, argumen tanggal boleh dihilangkan.
@@ -88,6 +90,25 @@ Jika salah satu tidak aktif, jadwal, antrean, atau callback Telegram bisa tertun
 Bot mengirim draft ke chat yang dikonfigurasi beserta tombol keputusan. Telegram mengirim callback tombol ke `POST /telegram/webhook`. Aplikasi memeriksa secret webhook dan chat ID sebelum mengubah status artikel. Untuk alamat situs `https://ainews.moori.my.id`, endpoint publiknya adalah `https://ainews.moori.my.id/telegram/webhook`.
 
 Jika callback tidak mengubah status, periksa bahwa webhook Telegram menunjuk ke URL HTTPS publik yang benar, secret sesuai, chat ID di konfigurasi benar, dan aplikasi dapat menerima request. Mengirim pesan draft saja belum membuktikan tombol persetujuan berfungsi.
+
+Jika artikel tidak memiliki `image_path` (misalnya artikel dibuat sebelum alur unduh gambar diterapkan), jalankan ulang import pada server untuk tanggal sumber artikel. Import akan mengisi file gambar untuk artikel duplikat yang belum memilikinya. Periksa kolom `image_path` dan keberadaan file pada disk `local` sebelum mengirim draft.
+
+Import ulang juga mengisi `source_author` pada artikel lama. Untuk memperbarui hanya field **Penulis Berita** pada post WordPress yang sudah ada, pasang bridge REST terbaru, import ulang tanggal artikel, lalu jalankan `php artisan wordpress:sync-author ID_ARTIKEL`.
+
+## Setup dan deployment server
+
+Setiap deployment server perlu memenuhi hal berikut:
+
+1. Siapkan `.env` server sendiri: `APP_ENV=production`, `APP_DEBUG=false`, `APP_KEY`, database, `APP_URL` HTTPS, `QUEUE_CONNECTION=database`, `ANTARA_USERNAME`, `ANTARA_PASSWORD`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `TELEGRAM_WEBHOOK_SECRET`, `GEMINI_API_KEY`, serta kredensial WordPress. Jangan menyalin `.env` lokal atau memasukkan rahasia ke Git.
+2. Pasang versi PHP dan ekstensi yang disyaratkan `composer.json`, lalu `composer install --no-dev --optimize-autoloader`. Pasang Node.js, jalankan `npm ci`, lalu `npx playwright install --with-deps chromium` pada Linux (perintah terakhir memerlukan hak instalasi paket OS). Pastikan PHP/CLI server memiliki akses internet keluar ke ANTARA, `img.antaranews.com`, Gemini, Telegram, dan WordPress.
+3. Jalankan `php artisan migrate --force` pada server. Pastikan migration `image_path` tercatat di tabel `migrations`.
+4. Pastikan `storage` dan `bootstrap/cache` dapat ditulis oleh user PHP/worker. Pertahankan `storage` lintas deployment/release; jangan menghapus `storage/app/private/antara-images` saat mengganti kode.
+5. Bersihkan cache konfigurasi setelah mengubah `.env`: `php artisan optimize:clear`, lalu `php artisan config:cache`.
+6. Jalankan satu import manual di server, misalnya `php artisan antara:import YYYY-MM-DD`. Verifikasi jumlah artikel, nilai `image_path`, dan file di `storage/app/private/antara-images`. Untuk artikel yang sudah ada, import ulang tanggal sumbernya agar file gambarnya diunduh.
+7. Daftarkan webhook Telegram ke URL HTTPS publik: `php artisan telegram:set-webhook https://DOMAIN/telegram/webhook`. Uji satu artikel dengan `php artisan telegram:send-draft ID`, pastikan foto dan pesan approval masuk, lalu tekan Approve dan pastikan status berubah. Setelah disetujui, uji `php artisan wordpress:publish ID` dan pastikan media featured tampil.
+8. Setelah uji manual berhasil, pasang cron scheduler (`* * * * * cd /PATH/KE/APP && php artisan schedule:run >> /dev/null 2>&1`) dan jalankan worker database terus-menerus di bawah Supervisor/systemd dengan perintah `php artisan queue:work database --queue=scheduled --sleep=3 --tries=1 --timeout=900`. Saat deployment kode baru, jalankan `php artisan queue:restart` agar worker memuat kode terbaru.
+
+Jika memakai deployment berbasis folder release, arahkan `storage` tiap release ke direktori persistent yang sama. Jika worker dan web berjalan pada mesin berbeda, keduanya harus berbagi disk file yang sama atau file gambar harus disalin ke storage bersama; database hanya menyimpan path, bukan isi file.
 
 ## Memeriksa status dan masalah
 

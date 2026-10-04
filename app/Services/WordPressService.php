@@ -10,6 +10,28 @@ use RuntimeException;
 
 class WordPressService
 {
+    public function syncPostAuthor(Article $article): void
+    {
+        $baseUrl = rtrim((string) config('services.wordpress.url'), '/');
+
+        if ($baseUrl === '' || blank(config('services.wordpress.username')) || blank(config('services.wordpress.application_password'))) {
+            throw new RuntimeException('Konfigurasi WordPress belum lengkap.');
+        }
+
+        if (! $article->wordpress_post_id || blank($article->source_author)) {
+            throw new RuntimeException('Artikel harus memiliki wordpress_post_id dan source_author sebelum Penulis Berita diperbarui.');
+        }
+
+        $response = $this->client()->post($baseUrl.'/wp-json/wp/v2/posts/'.$article->wordpress_post_id, [
+            'meta' => ['writer-value' => $article->source_author],
+        ]);
+
+        if (! $response->successful()
+            || (string) $response->json('meta.writer-value') !== $article->source_author) {
+            throw new RuntimeException('WordPress tidak menyimpan Penulis Berita. Pastikan bridge REST terbaru sudah aktif.');
+        }
+    }
+
     public function publish(Article $article): int
     {
         $baseUrl = rtrim((string) config('services.wordpress.url'), '/');
@@ -20,6 +42,10 @@ class WordPressService
 
         if (blank($article->seo_focus_keyword) || blank($article->seo_category) || empty($article->seo_tags)) {
             throw new RuntimeException('Metadata SEO belum lengkap. Jalankan ulang ai:rewrite untuk artikel ini.');
+        }
+
+        if (blank($article->source_author)) {
+            throw new RuntimeException('Nama penulis ANTARA belum tersimpan. Jalankan ulang import pada tanggal sumber artikel.');
         }
 
         $categoryId = $article->wordpress_category_id ?: $this->findOrCreateTerm($baseUrl, 'categories', $article->seo_category);
@@ -48,6 +74,7 @@ class WordPressService
             'featured_media' => $mediaId,
             'meta' => [
                 '_yoast_wpseo_focuskw' => $article->seo_focus_keyword,
+                'writer-value' => $article->source_author,
             ],
         ];
 
@@ -64,6 +91,10 @@ class WordPressService
 
         if ((string) $postResponse->json('meta._yoast_wpseo_focuskw') !== $article->seo_focus_keyword) {
             throw new RuntimeException('Yoast tidak menyimpan focus keyphrase. Pasang plugin bridge WordPress yang disertakan, lalu coba publikasi lagi.');
+        }
+
+        if ((string) $postResponse->json('meta.writer-value') !== $article->source_author) {
+            throw new RuntimeException('WordPress tidak menyimpan Penulis Berita. Pastikan bridge REST terbaru sudah aktif.');
         }
 
         $publishResponse = $this->client()->post($baseUrl.'/wp-json/wp/v2/posts/'.$postId, ['status' => 'publish']);

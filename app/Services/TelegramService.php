@@ -6,6 +6,7 @@ use App\Models\Article;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 
 class TelegramService
@@ -48,7 +49,10 @@ class TelegramService
             ]],
         ];
 
-        if (filled($article->image_url)) {
+        if (filled($article->image_path) && Storage::disk('local')->exists($article->image_path)) {
+            $caption = mb_substr($article->rewritten_title."\n\n".$seoSummary, 0, 1024);
+            $this->sendPhotoFile($article->image_path, $caption);
+        } elseif (filled($article->image_url)) {
             $caption = mb_substr($article->rewritten_title."\n\n".$seoSummary, 0, 1024);
             $this->sendPhoto($article->image_url, $caption);
         }
@@ -164,6 +168,33 @@ class TelegramService
         try {
             $response = Http::acceptJson()->timeout(45)
                 ->attach('photo', $image->body(), $filename)
+                ->post("https://api.telegram.org/bot{$token}/sendPhoto", [
+                    'chat_id' => $this->chatId(),
+                    'caption' => $caption,
+                ]);
+        } catch (ConnectionException) {
+            throw new RuntimeException('Tidak dapat terhubung ke Telegram API. Periksa koneksi server.');
+        }
+
+        if ($response->failed() || $response->json('ok') !== true) {
+            throw new RuntimeException('Telegram gagal mengunggah gambar: '.($response->json('description') ?? 'respons tidak valid.'));
+        }
+    }
+
+    private function sendPhotoFile(string $path, string $caption): void
+    {
+        $token = config('services.telegram.bot_token');
+        if (! is_string($token) || trim($token) === '') {
+            throw new RuntimeException('TELEGRAM_BOT_TOKEN belum diatur di file .env.');
+        }
+
+        $disk = Storage::disk('local');
+        $filename = basename($path) ?: 'antara-image.jpg';
+        $mimeType = $disk->mimeType($path) ?: 'image/jpeg';
+
+        try {
+            $response = Http::acceptJson()->timeout(45)
+                ->attach('photo', $disk->get($path), $filename, ['Content-Type' => $mimeType])
                 ->post("https://api.telegram.org/bot{$token}/sendPhoto", [
                     'chat_id' => $this->chatId(),
                     'caption' => $caption,

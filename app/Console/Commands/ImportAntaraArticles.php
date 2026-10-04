@@ -72,9 +72,26 @@ class ImportAntaraArticles extends Command
         }
 
         foreach ($articles as &$article) {
-            $article['image_path'] = $article['image_url']
-                ? $this->downloadImage($article['image_url'], (string) $article['source_id'])
-                : null;
+            $sourceId = (string) $article['source_id'];
+            $sourceUrl = (string) $article['source_url'];
+            $urlHash = hash('sha256', $sourceUrl);
+            $contentHash = hash('sha256', $this->normalizeContent((string) $article['source_content']));
+            $existingArticle = Article::query()
+                ->where('source', 'antara')
+                ->where(function ($query) use ($sourceId, $urlHash, $contentHash): void {
+                    $query->where('source_id', $sourceId)
+                        ->orWhere('source_url_hash', $urlHash)
+                        ->orWhere('content_hash', $contentHash);
+                })
+                ->first();
+
+            $hasStoredImage = $existingArticle?->image_path
+                && Storage::disk('local')->exists($existingArticle->image_path);
+            $article['image_path'] = $hasStoredImage
+                ? $existingArticle->image_path
+                : ($article['image_url']
+                    ? $this->downloadImage($article['image_url'], $sourceId)
+                    : null);
         }
         unset($article);
 
@@ -109,6 +126,10 @@ class ImportAntaraArticles extends Command
                         $missingFields['source_published_at'] = $publishedAt;
                     }
 
+                    if ($existingArticle->source_author === null && ! empty($article['source_author'])) {
+                        $missingFields['source_author'] = $article['source_author'];
+                    }
+
                     if ($existingArticle->image_path === null && ! empty($article['image_path'])) {
                         $missingFields['image_url'] = $article['image_url'];
                         $missingFields['image_path'] = $article['image_path'];
@@ -131,6 +152,7 @@ class ImportAntaraArticles extends Command
                     'source_title' => (string) $article['source_title'],
                     'source_content' => $content,
                     'source_published_at' => $publishedAt,
+                    'source_author' => $article['source_author'] ?? null,
                     'content_hash' => $contentHash,
                     'image_url' => $article['image_url'] ?? null,
                     'image_path' => $article['image_path'] ?? null,
@@ -218,6 +240,8 @@ class ImportAntaraArticles extends Command
             || preg_match('//u', $content) !== 1
             || (isset($article['source_published_at']) && $article['source_published_at'] !== null
                 && ! is_string($article['source_published_at']))
+            || (isset($article['source_author']) && $article['source_author'] !== null
+                && (! is_string($article['source_author']) || trim($article['source_author']) === ''))
             || (isset($article['image_url']) && $article['image_url'] !== null
                 && (! is_string($article['image_url'])
                     || filter_var($article['image_url'], FILTER_VALIDATE_URL) === false))) {
@@ -258,7 +282,9 @@ class ImportAntaraArticles extends Command
         }
 
         $path = "antara-images/{$sourceId}.{$extension}";
-        Storage::disk('local')->put($path, $response->body());
+        if (! Storage::disk('local')->put($path, $response->body())) {
+            throw new RuntimeException("Gagal menyimpan file gambar artikel sumber {$sourceId} ke storage lokal.");
+        }
 
         return $path;
     }
