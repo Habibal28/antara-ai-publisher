@@ -40,7 +40,7 @@ Untuk tahap AI, Telegram, dan WordPress, satu pemanggilan tanpa ID mengambil pal
 
 Status `failed` berarti tahap sebelumnya mengalami masalah. Lihat pesan error artikel dan log aplikasi sebelum mencoba ulang. Hindari membagikan log mentah tanpa memeriksa apakah ada informasi rahasia.
 
-Saat import, byline `Oleh ...` disimpan ke `articles.source_author`. URL gambar langsung dari ANTARA diunduh ke `storage/app/private/antara-images` (disk `local`) dan lokasi file disimpan pada kolom `articles.image_path`. Pengiriman Telegram dan unggahan featured image WordPress menggunakan file lokal ini. File gambar tidak masuk Git dan tidak ikut `push`/`pull`; setiap mesin harus mengimpornya sendiri, dan direktori `storage` harus persisten saat deployment.
+Saat import, URL gambar langsung dari ANTARA diunduh ke `storage/app/private/antara-images` (disk `local`) dan lokasi file disimpan pada kolom `articles.image_path`. Pengiriman Telegram dan unggahan featured image WordPress menggunakan file lokal ini. File gambar tidak masuk Git dan tidak ikut `push`/`pull`; setiap mesin harus mengimpornya sendiri, dan direktori `storage` harus persisten saat deployment. Field **Penulis Berita** pada WordPress memakai nilai `WORDPRESS_AUTHOR_NAME` dari `.env`.
 
 ## Menjalankan satu artikel secara manual
 
@@ -93,7 +93,7 @@ Jika callback tidak mengubah status, periksa bahwa webhook Telegram menunjuk ke 
 
 Jika artikel tidak memiliki `image_path` (misalnya artikel dibuat sebelum alur unduh gambar diterapkan), jalankan ulang import pada server untuk tanggal sumber artikel. Import akan mengisi file gambar untuk artikel duplikat yang belum memilikinya. Periksa kolom `image_path` dan keberadaan file pada disk `local` sebelum mengirim draft.
 
-Import ulang juga mengisi `source_author` pada artikel lama. Untuk memperbarui hanya field **Penulis Berita** pada post WordPress yang sudah ada, pasang bridge REST terbaru, import ulang tanggal artikel, lalu jalankan `php artisan wordpress:sync-author ID_ARTIKEL`.
+Untuk memperbarui hanya field **Penulis Berita** pada post WordPress yang sudah ada, atur `WORDPRESS_AUTHOR_NAME`, pasang bridge REST terbaru, lalu jalankan `php artisan wordpress:sync-author ID_ARTIKEL`.
 
 ## Setup dan deployment server
 

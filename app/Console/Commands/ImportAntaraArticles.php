@@ -126,10 +126,6 @@ class ImportAntaraArticles extends Command
                         $missingFields['source_published_at'] = $publishedAt;
                     }
 
-                    if ($existingArticle->source_author === null && ! empty($article['source_author'])) {
-                        $missingFields['source_author'] = $article['source_author'];
-                    }
-
                     if ($existingArticle->image_path === null && ! empty($article['image_path'])) {
                         $missingFields['image_url'] = $article['image_url'];
                         $missingFields['image_path'] = $article['image_path'];
@@ -152,7 +148,6 @@ class ImportAntaraArticles extends Command
                     'source_title' => (string) $article['source_title'],
                     'source_content' => $content,
                     'source_published_at' => $publishedAt,
-                    'source_author' => $article['source_author'] ?? null,
                     'content_hash' => $contentHash,
                     'image_url' => $article['image_url'] ?? null,
                     'image_path' => $article['image_path'] ?? null,
@@ -240,8 +235,6 @@ class ImportAntaraArticles extends Command
             || preg_match('//u', $content) !== 1
             || (isset($article['source_published_at']) && $article['source_published_at'] !== null
                 && ! is_string($article['source_published_at']))
-            || (isset($article['source_author']) && $article['source_author'] !== null
-                && (! is_string($article['source_author']) || trim($article['source_author']) === ''))
             || (isset($article['image_url']) && $article['image_url'] !== null
                 && (! is_string($article['image_url'])
                     || filter_var($article['image_url'], FILTER_VALIDATE_URL) === false))) {

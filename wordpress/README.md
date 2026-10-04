@@ -95,7 +95,7 @@ php artisan migrate --force
 php artisan migrate:status
 ```
 
-Migration menambahkan kolom metadata SEO, byline sumber, dan ID kategori, tags, author, gambar, serta post WordPress pada tabel artikel. Jika queue worker berjalan sebagai proses tetap, minta worker memuat ulang kode:
+Migration menambahkan kolom metadata SEO dan ID kategori, tags, author, gambar, serta post WordPress pada tabel artikel. Jika queue worker berjalan sebagai proses tetap, minta worker memuat ulang kode:
 
 ```bash
 php artisan queue:restart
@@ -107,12 +107,12 @@ Kategori yang dibuat AI dicocokkan dengan nama kategori WordPress. Jika tidak di
 
 ## 8. Uji dengan satu artikel
 
-Pilih satu artikel baru yang sudah melewati rewrite. Pastikan import telah menyimpan `source_author`, lalu periksa metadata sebelum mengirimnya ke Telegram:
+Pilih satu artikel baru yang sudah melewati rewrite, lalu periksa metadata sebelum mengirimnya ke Telegram:
 
 ```sql
 SELECT id, status, seo_focus_keyword, seo_tags, seo_category,
        wordpress_category_id, wordpress_tag_ids, wordpress_author_id,
-       source_author, wordpress_media_id, wordpress_post_id
+       wordpress_media_id, wordpress_post_id
 FROM articles
 ORDER BY id DESC
 LIMIT 5;
@@ -130,7 +130,7 @@ Perintah itu menerbitkan artikel sungguhan jika seluruh langkah berhasil. Jika g
 
 Setelah Laravel melaporkan publikasi berhasil:
 
-1. Buka post di Dashboard WordPress. Pastikan akun author WordPress dan field **Penulis Berita** terisi; field kedua diambil dari byline ANTARA (`Oleh ...`).
+1. Buka post di Dashboard WordPress. Pastikan akun author WordPress dan field **Penulis Berita** terisi. Field **Penulis Berita** mengikuti `WORDPRESS_AUTHOR_NAME` dari `.env`.
 2. Pastikan kategori dan tags sesuai dengan isi berita.
 3. Pastikan gambar sumber tampil sebagai **Featured image/Gambar andalan**.
 4. Buka panel Yoast SEO dan pastikan focus keyphrase terisi.
@@ -138,7 +138,7 @@ Setelah Laravel melaporkan publikasi berhasil:
 
 Laravel menyimpan ID post, media, author, kategori, dan tags di database artikel. Jika perintah gagal, periksa `error_message` pada record dan `storage/logs/laravel.log`. Hapus rahasia dari log sebelum membagikannya.
 
-Untuk mengisi field Penulis Berita pada post yang sudah ada, jalankan `php artisan antara:import YYYY-MM-DD` untuk memperbarui `source_author` artikel lama, lalu `php artisan wordpress:sync-author ID_ARTIKEL`. Perbarui plugin bridge dari ZIP yang baru dan aktifkan ulang jika perlu sebelum menjalankan sinkronisasi.
+Untuk mengisi field Penulis Berita pada post yang sudah ada, atur `WORDPRESS_AUTHOR_NAME`, perbarui plugin bridge dari ZIP terbaru, lalu jalankan `php artisan wordpress:sync-author ID_ARTIKEL`.
 
 ## 10. Artikel lama
 

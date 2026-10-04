@@ -63,12 +63,6 @@ try {
                 ?.innerText.replace("Tanggal:", "")
                 .trim() ?? "";
             const contentElement = document.querySelector("#newbody");
-            const byline = contentElement?.innerText
-                .split(/\r?\n/)
-                .map((line) => line.trim())
-                .find((line) => /^Oleh\s+/i.test(line));
-            const authorMatch = byline?.match(/^Oleh\s+(.+?)(?:\s+Editor\s*:.*)?$/i);
-            const sourceAuthor = authorMatch?.[1]?.trim() ?? null;
             const paragraphs = [...(contentElement?.querySelectorAll("p") ?? [])]
                 .map((paragraph) => paragraph.innerText.trim())
                 .filter(Boolean);
@@ -85,7 +79,6 @@ try {
                 source_url: currentUrl.href,
                 source_title: title,
                 source_published_at: dateText,
-                source_author: sourceAuthor,
                 source_content: content,
                 image_url: imageUrl,
             };

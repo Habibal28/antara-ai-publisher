@@ -14,7 +14,6 @@ class Article extends Model
         'source_title',
         'source_content',
         'source_published_at',
-        'source_author',
         'image_url',
         'image_path',
         'content_hash',

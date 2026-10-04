@@ -26,7 +26,8 @@ class SyncWordPressAuthor extends Command
         try {
             $wordpress->syncPostAuthor($article);
             $article->update(['error_message' => null]);
-            $this->info("Penulis Berita '{$article->source_author}' berhasil disimpan pada post WordPress {$article->wordpress_post_id}.");
+            $writerName = (string) config('services.wordpress.author_name');
+            $this->info("Penulis Berita '{$writerName}' berhasil disimpan pada post WordPress {$article->wordpress_post_id}.");
 
             return self::SUCCESS;
         } catch (Throwable $exception) {
