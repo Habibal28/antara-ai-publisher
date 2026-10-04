@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Services\AntaraService;
 use App\Http\Controllers\TelegramWebhookController;
 
+Route::view('/', 'welcome')->name('home');
+
 Route::post('/telegram/webhook', TelegramWebhookController::class);
 
 Route::get('/test-antara', function (AntaraService $service) {
