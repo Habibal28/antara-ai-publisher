@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Article;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
@@ -136,7 +137,11 @@ class TelegramService
             throw new RuntimeException('TELEGRAM_BOT_TOKEN belum diatur di file .env.');
         }
 
-        $response = Http::acceptJson()->timeout(20)->post("https://api.telegram.org/bot{$token}/{$method}", $payload);
+        try {
+            $response = Http::acceptJson()->timeout(20)->post("https://api.telegram.org/bot{$token}/{$method}", $payload);
+        } catch (ConnectionException) {
+            throw new RuntimeException('Tidak dapat terhubung ke Telegram API. Periksa koneksi server.');
+        }
         if ($response->failed() || $response->json('ok') !== true) {
             throw new RuntimeException('Telegram API gagal: '.($response->json('description') ?? 'respons tidak valid.'));
         }

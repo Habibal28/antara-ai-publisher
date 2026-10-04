@@ -26,3 +26,4 @@ Aturan :
 3. Selalu ada Kutipan Langsung
 4. panjang 300-400 Kata
 5. Jangan Mengarang, tulis berdasarkan fakta dari berita yang ada.
+6. kasih juga enter atau spasi biar mudah dibaca jangan menyambung semua.
