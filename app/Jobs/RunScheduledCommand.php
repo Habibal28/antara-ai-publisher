@@ -10,6 +10,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
+use RuntimeException;
 
 class RunScheduledCommand implements ShouldBeUnique, ShouldQueue
 {
@@ -35,12 +36,21 @@ class RunScheduledCommand implements ShouldBeUnique, ShouldQueue
     public function handle(): void
     {
         $exitCode = Artisan::call($this->commandName);
+        $output = trim(Artisan::output());
 
         if ($exitCode !== 0) {
             Log::error('Scheduled workflow command returned a failure status.', [
                 'command' => $this->commandName,
                 'exit_code' => $exitCode,
+                'output' => mb_substr($output, 0, 2000),
             ]);
+
+            throw new RuntimeException(sprintf(
+                'Scheduled command [%s] failed with exit code %d%s',
+                $this->commandName,
+                $exitCode,
+                $output === '' ? '.' : ': '.mb_substr($output, 0, 1000),
+            ));
         }
     }
 }
