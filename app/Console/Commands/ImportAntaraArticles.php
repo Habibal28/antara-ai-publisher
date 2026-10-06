@@ -126,7 +126,9 @@ class ImportAntaraArticles extends Command
                         $missingFields['source_published_at'] = $publishedAt;
                     }
 
-                    if ($existingArticle->image_path === null && ! empty($article['image_path'])) {
+                    if ((! $existingArticle->image_path
+                        || ! Storage::disk('local')->exists($existingArticle->image_path))
+                        && ! empty($article['image_path'])) {
                         $missingFields['image_url'] = $article['image_url'];
                         $missingFields['image_path'] = $article['image_path'];
                     }
