@@ -5,7 +5,6 @@ namespace App\Console\Commands;
 use App\Models\Article;
 use App\Services\WordPressService;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Storage;
 use Throwable;
 
 class PublishWordPressArticle extends Command
@@ -25,18 +24,6 @@ class PublishWordPressArticle extends Command
 
         if (! $article) {
             $this->info('Tidak ada artikel approved yang menunggu publikasi.');
-
-            return self::SUCCESS;
-        }
-
-        if (! $article->wordpress_media_id
-            && (blank($article->image_path) || ! Storage::disk('local')->exists($article->image_path))) {
-            $reason = 'Publikasi dibatalkan: file gambar lokal tidak tersedia.';
-            $article->update([
-                'status' => 'cancelled',
-                'error_message' => $reason,
-            ]);
-            $this->warn("Artikel {$article->id} dibatalkan karena file gambar lokal tidak tersedia.");
 
             return self::SUCCESS;
         }

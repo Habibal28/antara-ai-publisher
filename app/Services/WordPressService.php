@@ -216,7 +216,7 @@ class WordPressService
     private function uploadFeaturedImage(string $baseUrl, Article $article): int
     {
         if (blank($article->image_path) || ! Storage::disk('local')->exists($article->image_path)) {
-            throw new RuntimeException('File gambar lokal artikel tidak ditemukan. Jalankan ulang import ANTARA untuk mengunduh gambar.');
+            $this->restoreLocalImage($article);
         }
 
         $imageBody = Storage::disk('local')->get($article->image_path);
@@ -236,5 +236,41 @@ class WordPressService
         }
 
         return (int) $uploaded->json('id');
+    }
+
+    private function restoreLocalImage(Article $article): void
+    {
+        $imageUrl = trim((string) $article->image_url);
+        $host = strtolower((string) parse_url($imageUrl, PHP_URL_HOST));
+
+        if (parse_url($imageUrl, PHP_URL_SCHEME) !== 'https'
+            || ($host !== 'antaranews.com' && ! str_ends_with($host, '.antaranews.com'))) {
+            throw new RuntimeException('File gambar lokal tidak tersedia dan URL gambar ANTARA tidak valid.');
+        }
+
+        $response = Http::timeout(45)->get($imageUrl);
+        $mimeType = strtolower(trim(explode(';', (string) $response->header('Content-Type'))[0]));
+        $extension = match ($mimeType) {
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+            'image/gif' => 'gif',
+            default => null,
+        };
+
+        if (! $response->successful() || $extension === null) {
+            throw new RuntimeException('File gambar lokal tidak tersedia dan gambar ANTARA gagal diunduh.');
+        }
+
+        $sourceId = filled($article->source_id) ? $article->source_id : $article->id;
+        $path = "antara-images/{$sourceId}.{$extension}";
+
+        if (! Storage::disk('local')->put($path, $response->body())
+            || ! Storage::disk('local')->exists($path)) {
+            throw new RuntimeException("Gambar artikel {$article->id} gagal disimpan di storage lokal.");
+        }
+
+        $article->image_path = $path;
+        $article->save();
     }
 }
