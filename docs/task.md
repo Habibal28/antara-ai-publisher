@@ -70,5 +70,5 @@ Productionize the webhook host and configure persistent scheduler and queue work
 - [x] Laravel schedules fact extraction, rewrite, Telegram draft delivery, and WordPress publishing once per minute through unique database queue jobs. Each command still processes at most one article per invocation.
 - [ ] Run the scheduler continuously with the host scheduler (for example, `php artisan schedule:work` during development or the Laravel scheduler cron entry in production); runtime and cron setup have not been verified.
 - [ ] Run a queue worker continuously with `php artisan queue:work database --queue=scheduled`; runtime has not been verified.
-- [x] ANTARA import is scheduled daily at 06:00 WIB and refreshes its session immediately before scraping, using credentials from `.env` in headless Playwright.
+- [x] ANTARA import is scheduled every 4 hours (00:00, 04:00, 08:00, 12:00, 16:00, 20:00 WIB) and refreshes its session immediately before scraping, using credentials from `.env` in headless Playwright.
 - [ ] Verify scheduled ANTARA login/import on a network-enabled host with configured credentials.

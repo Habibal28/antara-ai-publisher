@@ -73,7 +73,7 @@ Jadwal aplikasi ada di `routes/console.php`:
 | Setiap menit                | `ai:rewrite`                        |
 | Setiap menit                | `telegram:send-draft`               |
 | Setiap menit                | `wordpress:publish`                 |
-| Setiap hari pukul 06.00 WIB | `antara:import`                     |
+| Setiap 4 jam (00.00, 04.00, 08.00, 12.00, 16.00, 20.00 WIB) | `antara:import` |
 
 Scheduler memasukkan job ke antrean `scheduled`. `RunScheduledCommand` menjalankan perintah Artisan terkait; setiap perintah memilih paling banyak satu artikel pada satu kali jalan. Dengan demikian beberapa artikel diproses bertahap lewat pemeriksaan berulang, bukan semuanya dalam satu pemanggilan.
 

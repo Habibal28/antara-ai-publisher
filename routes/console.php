@@ -14,4 +14,4 @@ Schedule::job(new RunScheduledCommand('ai:extract-facts'), 'scheduled')->everyMi
 Schedule::job(new RunScheduledCommand('ai:rewrite'), 'scheduled')->everyMinute();
 Schedule::job(new RunScheduledCommand('telegram:send-draft'), 'scheduled')->everyMinute();
 Schedule::job(new RunScheduledCommand('wordpress:publish'), 'scheduled')->everyMinute();
-Schedule::job(new RunScheduledCommand('antara:import'), 'scheduled')->dailyAt('06:00')->timezone('Asia/Jakarta');
+Schedule::job(new RunScheduledCommand('antara:import'), 'scheduled')->cron('0 */4 * * *')->timezone('Asia/Jakarta');

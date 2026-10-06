@@ -27,7 +27,7 @@
 
 ## Next
 
--   [ ] Scheduler (scheduled entries configured, including daily ANTARA import with session refresh; continuous runtime and host cron setup pending)
+-   [ ] Scheduler (scheduled entries configured, including ANTARA import every 4 hours with session refresh; continuous runtime and host cron setup pending)
 -   [ ] Queue (scheduled command jobs implemented; worker runtime pending)
 -   [x] Deduplication improvement (content hashes ignore whitespace-only variations; normalization migration applied)
 -   [x] Validation (import payloads and Gemini facts/rewrites are structurally checked)
