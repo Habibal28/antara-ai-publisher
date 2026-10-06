@@ -27,14 +27,14 @@ Sesi ANTARA dapat kedaluwarsa. Import otomatis menjalankan langkah login terlebi
 
 ## Tahapan artikel dan perintahnya
 
-| Tahap                   | Perintah                                 | Yang dilakukan                                                        | Status utama               |
-| ----------------------- | ---------------------------------------- | --------------------------------------------------------------------- | -------------------------- |
-| Import                  | `php artisan antara:import [YYYY-MM-DD]` | Mengambil daftar dan detail berita ANTARA lalu menyimpan artikel baru | `pending`                  |
-| Ekstrak fakta           | `php artisan ai:extract-facts [ID]`      | Menghasilkan data fakta dari satu artikel                             | `processing`               |
+| Tahap                   | Perintah                                 | Yang dilakukan                                                                            | Status utama               |
+| ----------------------- | ---------------------------------------- | ----------------------------------------------------------------------------------------- | -------------------------- |
+| Import                  | `php artisan antara:import [YYYY-MM-DD]` | Mengambil daftar dan detail berita ANTARA lalu menyimpan artikel baru                     | `pending`                  |
+| Ekstrak fakta           | `php artisan ai:extract-facts [ID]`      | Menghasilkan data fakta dari satu artikel                                                 | `processing`               |
 | Tulis ulang             | `php artisan ai:rewrite [ID]`            | Membuat judul, isi, focus keyword, tags, dan kategori berdasarkan fakta serta aturan gaya | `drafted`                  |
-| Kirim untuk persetujuan | `php artisan telegram:send-draft [ID]`   | Mengirim draft dengan tombol Approve dan Reject                       | `waiting_approval`         |
-| Persetujuan             | Klik tombol pada Telegram                | Webhook menerima callback dan mencatat keputusan                      | `approved` atau `rejected` |
-| Terbitkan               | `php artisan wordpress:publish [ID]`     | Menerbitkan artikel yang sudah approved dan menyimpan ID post         | `published`                |
+| Kirim untuk persetujuan | `php artisan telegram:send-draft [ID]`   | Mengirim draft dengan tombol Approve dan Reject                                           | `waiting_approval`         |
+| Persetujuan             | Klik tombol pada Telegram                | Webhook menerima callback dan mencatat keputusan                                          | `approved` atau `rejected` |
+| Terbitkan               | `php artisan wordpress:publish [ID]`     | Menerbitkan artikel yang sudah approved dan menyimpan ID post                             | `published`                |
 
 Untuk tahap AI, Telegram, dan WordPress, satu pemanggilan tanpa ID mengambil paling banyak satu artikel yang memenuhi syarat. Ulangi perintah untuk memproses artikel berikutnya. Jika memberi ID, artikel itu harus berada pada tahap yang sesuai. Periksa aturan gaya di [`ai-rewrite-rules.md`](ai-rewrite-rules.md) sebelum mengubah gaya tulisan.
 

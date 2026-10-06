@@ -19,7 +19,6 @@ try {
     await page.locator('input[name="user"]').fill(process.env.ANTARA_USERNAME);
     await page.locator('input[name="pass"]').fill(process.env.ANTARA_PASSWORD);
     await page.locator('button[name="login"]').click();
-    await page.waitForLoadState("networkidle", { timeout: 30000 });
 
     await page.waitForFunction(() => {
         const username = document.querySelector('input[name="user"]');
