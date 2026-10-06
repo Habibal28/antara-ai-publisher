@@ -47,7 +47,7 @@
 - `php artisan wordpress:publish [article_id]` publishes one approved article at a time.
 - Articles outside `approved` status and articles with an existing `wordpress_post_id` are skipped.
 - Successful responses save `wordpress_post_id`, `published_at`, and `published` status.
-- API errors are saved to `error_message`; the article remains approved for review/retry.
+- API errors are saved to `error_message`; the article remains approved for review/retry. If the required local featured image is missing and no WordPress media ID exists, publication is cancelled with status `cancelled` so the scheduled publisher can continue to the next approved article.
 - WordPress URL, username, and application password are configured through environment variables.
 - Feature tests pass: `php artisan test --filter=PublishWordPressArticleTest`.
 - WordPress REST authentication was verified with a read-only request (HTTP 200).
