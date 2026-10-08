@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Jobs\ImportRegionalAntaraArticles;
 use App\Models\Article;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
@@ -22,7 +23,14 @@ class TelegramService
         $this->request('setWebhook', [
             'url' => $url,
             'secret_token' => $secret,
-            'allowed_updates' => ['callback_query'],
+            'allowed_updates' => ['message', 'callback_query'],
+        ]);
+
+        $this->request('setMyCommands', [
+            'commands' => [
+                ['command' => 'jateng', 'description' => 'Ambil 10 berita ANTARA wilayah Jawa Tengah'],
+                ['command' => 'jogja', 'description' => 'Ambil 10 berita ANTARA wilayah DI Yogyakarta'],
+            ],
         ]);
     }
 
@@ -73,6 +81,13 @@ class TelegramService
 
     public function processUpdate(array $update): void
     {
+        $message = $update['message'] ?? null;
+        if (is_array($message)) {
+            $this->processCommandMessage($message);
+
+            return;
+        }
+
         $callback = $update['callback_query'] ?? null;
         if (! is_array($callback)) {
             return;
@@ -136,6 +151,32 @@ class TelegramService
                 Log::warning('Gagal menghapus tombol approval Telegram.', ['error' => $exception->getMessage()]);
             }
         }
+    }
+
+    public function sendMessage(string $chatId, string $text): void
+    {
+        $this->request('sendMessage', [
+            'chat_id' => $chatId,
+            'text' => $text,
+        ]);
+    }
+
+    private function processCommandMessage(array $message): void
+    {
+        if ((string) data_get($message, 'chat.id') !== $this->chatId()
+            || data_get($message, 'from.is_bot') === true) {
+            return;
+        }
+
+        $text = $message['text'] ?? null;
+        if (! is_string($text) || preg_match('/^\/(jateng|jogja)(?:@[A-Za-z0-9_]+)?(?:\s|$)/u', trim($text), $matches) !== 1) {
+            return;
+        }
+
+        $region = $matches[1];
+        $label = config("services.antara_regions.{$region}.label", $region);
+        ImportRegionalAntaraArticles::dispatch($region)->onQueue('scheduled');
+        $this->sendMessage($this->chatId(), "Perintah /{$region} diterima. Saya mulai mengambil maksimal 10 berita untuk {$label} dari ANTARA.");
     }
 
     private function answerCallback(string $callbackId, string $text): void

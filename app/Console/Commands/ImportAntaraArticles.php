@@ -13,13 +13,14 @@ use Throwable;
 
 class ImportAntaraArticles extends Command
 {
-    protected $signature = 'antara:import {date? : Tanggal berita dalam format YYYY-MM-DD}';
+    protected $signature = 'antara:import {date? : Tanggal berita dalam format YYYY-MM-DD} {--region= : Filter berita dengan wilayah jateng atau jogja}';
 
     protected $description = 'Ambil artikel ANTARA dan simpan yang belum pernah diproses ke database';
 
     public function handle(): int
     {
         $date = $this->argument('date') ?: now('Asia/Jakarta')->toDateString();
+        $region = $this->option('region');
 
         try {
             $date = CarbonImmutable::createFromFormat('!Y-m-d', $date)->toDateString();
@@ -27,6 +28,16 @@ class ImportAntaraArticles extends Command
             $this->error('Tanggal tidak valid. Gunakan format YYYY-MM-DD.');
 
             return self::FAILURE;
+        }
+
+        $regionConfig = null;
+        if ($region !== null) {
+            $regionConfig = config("services.antara_regions.{$region}");
+            if (! is_array($regionConfig) || ! is_array($regionConfig['areas'] ?? null)) {
+                $this->error('Wilayah tidak dikenal. Gunakan jateng atau jogja.');
+
+                return self::FAILURE;
+            }
         }
 
         $login = new Process(['node', 'scripts/antara-login.js'], base_path());
@@ -39,7 +50,13 @@ class ImportAntaraArticles extends Command
             return self::FAILURE;
         }
 
-        $process = new Process(['node', 'scripts/antara-import.js', $date], base_path());
+        $arguments = ['node', 'scripts/antara-import.js', $date];
+        if ($regionConfig !== null) {
+            $arguments[] = $region;
+            $arguments[] = json_encode($regionConfig['areas'], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+        }
+
+        $process = new Process($arguments, base_path());
         $process->setTimeout(600);
         $process->run();
 
@@ -50,14 +67,22 @@ class ImportAntaraArticles extends Command
         }
 
         try {
-            $articles = json_decode($process->getOutput(), true, flags: JSON_THROW_ON_ERROR);
+            $result = json_decode($process->getOutput(), true, flags: JSON_THROW_ON_ERROR);
         } catch (Throwable $exception) {
             $this->error('Output scraper tidak valid: '.$exception->getMessage());
 
             return self::FAILURE;
         }
 
-        if (! is_array($articles)) {
+        $summary = null;
+        if ($regionConfig !== null && is_array($result) && isset($result['articles']) && is_array($result['articles'])) {
+            $articles = $result['articles'];
+            $summary = $result;
+        } else {
+            $articles = $result;
+        }
+
+        if (! is_array($articles) || ($regionConfig !== null && $summary === null)) {
             $this->error('Output scraper bukan daftar artikel.');
 
             return self::FAILURE;
@@ -161,6 +186,14 @@ class ImportAntaraArticles extends Command
 
         $this->info('Artikel baru disimpan: '.$inserted);
         $this->line('Duplikat dilewati: '.$skipped);
+
+        if ($summary !== null) {
+            $this->line('Halaman daftar diperiksa: '.(int) ($summary['pages_scanned'] ?? 0));
+            $this->line('Berita wilayah ditemukan: '.count($articles).' dari 10 target');
+            if (count($articles) < 10) {
+                $this->warn('Semua halaman daftar yang tersedia sudah diperiksa; sumber tidak menyediakan 10 berita cocok untuk wilayah ini pada tanggal ini.');
+            }
+        }
 
         return self::SUCCESS;
     }

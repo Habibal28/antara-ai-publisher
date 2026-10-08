@@ -47,6 +47,26 @@ return [
         'webhook_secret' => env('TELEGRAM_WEBHOOK_SECRET'),
     ],
 
+    'antara_regions' => [
+        'jateng' => [
+            'label' => 'Jawa Tengah',
+            'areas' => [
+                'Banjarnegara', 'Banyumas', 'Batang', 'Blora', 'Boyolali', 'Brebes', 'Cilacap',
+                'Demak', 'Grobogan', 'Jepara', 'Karanganyar', 'Kebumen', 'Kendal', 'Klaten',
+                'Kudus', 'Magelang', 'Pati', 'Pekalongan', 'Pemalang', 'Purbalingga',
+                'Purworejo', 'Rembang', 'Semarang', 'Sragen', 'Sukoharjo', 'Tegal',
+                'Temanggung', 'Wonogiri', 'Wonosobo', 'Salatiga', 'Surakarta', 'Solo',
+            ],
+        ],
+        'jogja' => [
+            'label' => 'DI Yogyakarta',
+            'areas' => [
+                'Bantul', 'Gunungkidul', 'Kulon Progo', 'Sleman', 'Yogyakarta', 'Jogja',
+                'Yogya', 'Daerah Istimewa Yogyakarta', 'DIY',
+            ],
+        ],
+    ],
+
     'wordpress' => [
         'url' => env('WORDPRESS_URL'),
         'username' => env('WORDPRESS_USERNAME'),

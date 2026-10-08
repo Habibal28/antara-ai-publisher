@@ -27,9 +27,11 @@
 
 ## Next
 
--   [ ] Scheduler (scheduled entries configured, including ANTARA import every 4 hours with session refresh; continuous runtime and host cron setup pending)
--   [ ] Queue (scheduled command jobs implemented; worker runtime pending)
+-   [x] Implementasi lokal command Telegram wilayah `/jateng` dan `/jogja` (pagination, filter lokasi, deduplikasi, dan antrean; rincian ada di `docs/task.md`)
+-   [ ] Deploy perubahan, daftarkan ulang webhook untuk menerima update `message`, dan verifikasi command langsung di Telegram
+-   [x] Scheduler (scheduler dan runtime berjalan)
+-   [x] Queue (worker berjalan)
 -   [x] Deduplication improvement (content hashes ignore whitespace-only variations; normalization migration applied)
 -   [x] Validation (import payloads and Gemini facts/rewrites are structurally checked)
--   [ ] Production deployment (approval and publishing verified; stable webhook host, scheduler, and queue worker remain)
--   [ ] WordPress SEO metadata (implementation added for Yoast focus keyphrase, tags, category, author, and featured image; VPS migration, bridge installation, and live verification pending)
+-   [x] Production deployment
+-   [x] WordPress SEO metadata (Yoast focus keyphrase, tags, category, author, and featured image)

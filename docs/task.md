@@ -3,20 +3,22 @@
 ## Task checklist
 
 - [x] ANTARA list/detail scraping and article import implementation
+- [x] Implementasi command Telegram `/jateng` dan `/jogja` untuk import berita wilayah
+- [ ] Deploy perubahan dan perbarui webhook Telegram agar menerima `message`; verifikasi langsung kedua command
 - [x] AI fact extraction (10 stored articles processed individually and evidence validated)
 - [x] AI rewrite (10 drafts processed individually; style rules remain user-editable)
 - [x] Telegram draft delivery and approval/rejection webhook implementation
 - [x] Telegram approval end-to-end (Approve callback changed article #1 to `approved` on 2026-10-03)
 - [x] WordPress publishing implementation for approved articles
 - [x] WordPress end-to-end publishing verification (article #1 published as WordPress post 19313; readback returned status `publish`)
-- [ ] SEO metadata publishing (Yoast focus keyphrase, tags, category, fixed author, and featured image; implementation ready, VPS migration and live verification pending)
+- [x] SEO metadata publishing (Yoast focus keyphrase, tags, category, fixed author, and featured image)
 - [x] Scheduler entries for fact extraction, rewrite, Telegram draft delivery, and approved-only WordPress publishing
-- [ ] Scheduler runtime and host cron setup
+- [x] Scheduler runtime and host cron setup
 - [x] Database queue job dispatch for scheduled workflow commands
-- [ ] Queue worker runtime setup
+- [x] Queue worker runtime setup
 - [x] Deduplication improvement (whitespace-normalized content hashes implemented and existing hashes migrated)
 - [x] Validation for imported ANTARA records and Gemini output structure/evidence
-- [ ] Production deployment
+- [x] Production deployment
 
 ## Completed: AI rewrite
 
@@ -55,7 +57,31 @@
 
 ## Next
 
-Productionize the webhook host and configure persistent scheduler and queue worker runtimes before relying on the full pipeline.
+Deploy perubahan regional command dan daftarkan ulang webhook Telegram agar update `message` diterima.
+
+## Rencana: pengambilan berita berdasarkan wilayah melalui Telegram
+
+Status: implementasi lokal selesai; deployment dan uji command langsung melalui Telegram belum diverifikasi.
+
+- `/jateng` dan `/jogja` dikenali pada webhook hanya dari chat Telegram yang dikonfigurasi. Keduanya langsung memberi konfirmasi, lalu menjalankan import pada queue `scheduled`.
+- Import memperbarui sesi ANTARA, mengambil berita tanggal hari ini, mencocokkan isi judul/berita dengan daftar wilayah, dan mengikuti pagination sampai mendapat 10 kecocokan atau semua halaman habis.
+- Import memakai deduplikasi ANTARA yang sudah ada. Hasil Telegram mencantumkan jumlah artikel baru, duplikat, halaman yang diperiksa, dan jumlah kecocokan; bila kurang dari 10, bot memberi tahu bahwa halaman sumber telah habis.
+- `telegram:set-webhook` kini meminta update `message` dan `callback_query`, serta mendaftarkan `/jateng` dan `/jogja` ke menu command bot. Jalankan ulang command tersebut setelah kode deploy agar trigger aktif pada bot yang berjalan.
+- Artikel yang baru masuk mengikuti pipeline ekstraksi fakta, rewrite, dan approval Telegram yang sudah berjalan.
+
+### Wilayah acuan Jawa Tengah
+
+29 kabupaten: Banjarnegara, Banyumas, Batang, Blora, Boyolali, Brebes, Cilacap, Demak, Grobogan, Jepara, Karanganyar, Kebumen, Kendal, Klaten, Kudus, Magelang, Pati, Pekalongan, Pemalang, Purbalingga, Purworejo, Rembang, Semarang, Sragen, Sukoharjo, Tegal, Temanggung, Wonogiri, Wonosobo.
+
+6 kota: Magelang, Pekalongan, Salatiga, Semarang, Surakarta (Solo), Tegal.
+
+### Wilayah acuan DI Yogyakarta
+
+4 kabupaten: Bantul, Gunungkidul, Kulon Progo, Sleman.
+
+1 kota: Yogyakarta.
+
+Daftar kabupaten/kota Jawa Tengah merujuk [direktori Pemerintah Provinsi Jawa Tengah](https://jatengprov.go.id/website-kab-kota/); jumlah 29 kabupaten dan 6 kota juga dinyatakan oleh [Pemerintah Provinsi Jawa Tengah](https://visitjawatengah.jatengprov.go.id/about-us/id). DIY memiliki 4 kabupaten dan 1 kota menurut [dokumen JDIH Pemerintah DIY](https://jdih.jogjaprov.go.id/upload/2024/pdf/Tahapan%20Perda/2024/Perda4-2024/02.Penjelasan%20atau%20Keterangan%20Raperda%20Perubahan%20Kedua%20Atas%20Perda%20Hak%20Keuangan.pdf).
 
 ## WordPress SEO metadata
 
