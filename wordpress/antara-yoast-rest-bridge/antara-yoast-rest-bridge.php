@@ -2,7 +2,7 @@
 /**
  * Plugin Name: ANTARA AI Publisher - Yoast REST Bridge
  * Description: Exposes Yoast metadata and the ANTARA publisher writer field through WordPress post REST endpoints.
- * Version: 1.3.0
+ * Version: 1.3.1
  */
 
 add_action('init', static function (): void {
@@ -28,7 +28,8 @@ add_action('init', static function (): void {
         },
     ]);
 
-    register_post_meta('post', 'writer-value', [
+    // WPmedia maps the editor input writer-value to the stored meta MAJPRO_Writer.
+    register_post_meta('post', 'MAJPRO_Writer', [
         'type' => 'string',
         'single' => true,
         'show_in_rest' => true,

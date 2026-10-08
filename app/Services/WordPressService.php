@@ -27,13 +27,13 @@ class WordPressService
 
         $response = $this->client()->post($baseUrl.'/wp-json/wp/v2/posts/'.$article->wordpress_post_id, [
             'meta' => [
-                'writer-value' => $writerName,
+                'MAJPRO_Writer' => $writerName,
                 '_yoast_wpseo_metadesc' => $metaDescription,
             ],
         ]);
 
         if (! $response->successful()
-            || (string) $response->json('meta.writer-value') !== $writerName
+            || (string) $response->json('meta.MAJPRO_Writer') !== $writerName
             || (string) $response->json('meta._yoast_wpseo_metadesc') !== $metaDescription) {
             throw new RuntimeException('WordPress tidak menyimpan meta description atau Penulis Berita. Pastikan bridge REST terbaru sudah aktif.');
         }
@@ -85,7 +85,7 @@ class WordPressService
             'meta' => [
                 '_yoast_wpseo_focuskw' => $article->seo_focus_keyword,
                 '_yoast_wpseo_metadesc' => $metaDescription,
-                'writer-value' => $writerName,
+                'MAJPRO_Writer' => $writerName,
             ],
         ];
 
@@ -108,7 +108,7 @@ class WordPressService
             throw new RuntimeException('Yoast tidak menyimpan meta description. Pastikan bridge REST terbaru sudah aktif.');
         }
 
-        if ((string) $postResponse->json('meta.writer-value') !== $writerName) {
+        if ((string) $postResponse->json('meta.MAJPRO_Writer') !== $writerName) {
             throw new RuntimeException('WordPress tidak menyimpan Penulis Berita. Pastikan bridge REST terbaru sudah aktif.');
         }
 

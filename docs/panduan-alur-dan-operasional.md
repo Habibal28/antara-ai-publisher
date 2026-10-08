@@ -110,6 +110,22 @@ Setiap deployment server perlu memenuhi hal berikut:
 
 Jika memakai deployment berbasis folder release, arahkan `storage` tiap release ke direktori persistent yang sama. Jika worker dan web berjalan pada mesin berbeda, keduanya harus berbagi disk file yang sama atau file gambar harus disalin ke storage bersama; database hanya menyimpan path, bukan isi file.
 
+### Samakan pengguna untuk proses manual dan otomatis
+
+Pada VPS ini cron dan worker Supervisor menjalankan aplikasi sebagai `ainew1271`. Jalankan instalasi browser dan perintah manual dari direktori proyek dengan pengguna yang sama:
+
+```bash
+sudo -u ainew1271 npx playwright install chromium
+sudo -u ainew1271 node scripts/antara-login.js
+sudo -u ainew1271 php artisan antara:import
+```
+
+Playwright menyimpan browser per pengguna. Browser yang diinstal sebagai `root` di `/root/.cache/ms-playwright` tidak tersedia bagi worker. Worker pada VPS ini mencari browser di `/home/ainews.moori.my.id/.cache/ms-playwright`.
+
+Pastikan `antara-session.json` dapat ditulis oleh `ainew1271` dan `storage/app/private/antara-images` beserta isinya dimiliki pengguna tersebut. Folder gambar private dapat memakai izin `700` dan file sesi `600` selama pemiliknya sesuai. Menjalankan import sebagai `root` dapat membuat file yang tidak dapat diakses worker.
+
+Jika cron dan worker aktif tetapi alur berhenti, periksa error perintah di `storage/logs/laravel.log`. Error `Executable doesn't exist` saat import menunjukkan browser belum terpasang untuk pengguna worker. Error `gagal disimpan di storage lokal` saat publish dapat disebabkan folder gambar tidak dapat diakses atau ditulis pengguna worker. Job berstatus `DONE` juga dapat berarti tidak ada artikel yang memenuhi status untuk diproses.
+
 ## Memeriksa status dan masalah
 
 Perintah pemeriksaan jadwal:
